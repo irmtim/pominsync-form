@@ -6,9 +6,10 @@ import { Field, Form, Formik } from "formik";
 import moment from 'moment'
 import {useOrderDates, usePostRedirect} from "shared";
 import Loading from "./Loading";
-import { IData } from "../api/models";
-import { getMinDate, getTypes } from "../api/_request";
+import { IOrgData } from "../api/models";
+import { getOrgData } from "../api/_request";
 import { FormRow } from "./FormRow";
+import { DateInfoBadge } from "./DateInfoBadge";
 
 export type CreateFormProps = {
   org: string
@@ -21,20 +22,15 @@ const CreateForm = ({org, backLink}: CreateFormProps) => {
 
   const orderDates = useOrderDates()
 
-  const [systemData, setSystemData] = useState<IData>()
+  const [systemData, setSystemData] = useState<IOrgData>()
 
   useEffect(() => {
     const fetchData = async () => {
 
-      const minDate = await getMinDate(org)
-      const orderTypes = await getTypes(org)
+      const orgData = await getOrgData(org)
 
-      if (minDate && orderTypes) {
-
-        setSystemData({
-          minDate: minDate,
-          orderTypes: orderTypes
-        })
+      if (orgData) {
+        setSystemData(orgData)
       }
     }
 
@@ -52,9 +48,19 @@ const CreateForm = ({org, backLink}: CreateFormProps) => {
         .required('Дата обязательна для заполнения')
         .test(
           'data-min',
+          `Записки на следующий день принимаются до ${moment(systemData?.timeLimit, 'YYYY-MM-DDTHH:mm').format('HH:mm')}`,
+          (value) => {
+            if (!moment(value).isSame(moment().add(1,'days'), 'days')) {
+              return true
+            }
+
+            return !moment(value).isAfter(moment(systemData?.timeLimit))
+          })
+        .test(
+          'data-range',
           'Поминовение для этой даты невозможно',
           (value) => {
-            return moment(value, INPUT_DATE_FORMAT).isSameOrAfter(moment(systemData?.minDate))
+            return moment(value, INPUT_DATE_FORMAT).isSameOrAfter(moment(systemData?.minDate, INPUT_DATE_FORMAT))
                 && moment(value, INPUT_DATE_FORMAT).isSameOrBefore(orderDates.maxDate())
           })
     }), [systemData?.minDate])
@@ -73,7 +79,7 @@ const CreateForm = ({org, backLink}: CreateFormProps) => {
     ? <Loading/>
     : (
     <Formik<ICreateOrder>
-      initialValues={{...initCreateOrder, date: orderDates.minDate().format(INPUT_DATE_FORMAT)}}
+      initialValues={{...initCreateOrder, date: moment(systemData.minDate).format(INPUT_DATE_FORMAT)}}
       validationSchema={validationSchema}
       onSubmit={(value) => {
         const url = `https://${org}.server.paykeeper.ru/create/`
@@ -81,7 +87,7 @@ const CreateForm = ({org, backLink}: CreateFormProps) => {
           sum: value.sum,
           client_email: value.email,
           orderid: compileOrder(value),
-          user_result_callback: backLink
+          user_result_callback: backLink !== null ? backLink : '/'
         }
         perform(url, postData)
       }}
@@ -90,7 +96,7 @@ const CreateForm = ({org, backLink}: CreateFormProps) => {
         <Form> 
           <div className="d-flex flex-column">
             <div className="pb-2">
-              <OrderTypesSelect orgId={org} types={systemData?.orderTypes} data={values.type} onChange={c => setFieldValue("type", c)} />
+              <OrderTypesSelect orgId={org} types={systemData.orderTypes} data={values.type} onChange={c => setFieldValue("type", c)} />
               {touched.type && errors.type && (
                 <div className='fv-plugins-message-container'>
                   <div className='fv-help-block text-danger'>{errors.type}</div>
@@ -118,7 +124,7 @@ const CreateForm = ({org, backLink}: CreateFormProps) => {
                     name="date" 
                     type="date" 
                     placeholder="ДД.ММ.ГГГГ" 
-                    min={orderDates.minDate().format(INPUT_DATE_FORMAT)} 
+                    min={moment(systemData.minDate).format(INPUT_DATE_FORMAT)} 
                     max={orderDates.maxDate().format(INPUT_DATE_FORMAT)} />
                     {touched.date && errors.date && (
                       <div className='fv-plugins-message-container'>

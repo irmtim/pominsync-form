@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 
 type Props = {
-  label: string
+  label: ReactNode
   element: ReactNode
 }
 
