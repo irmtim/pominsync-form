@@ -4,12 +4,10 @@ import { OrderTypesSelect } from "widgets/order-types-select";
 import * as Yup from 'yup'
 import { Field, Form, Formik } from "formik";
 import moment from 'moment'
-import {useOrderDates, usePostRedirect} from "shared";
+import {FormRow, FormValidation, useOrderDates, usePostRedirect} from "shared";
 import Loading from "./Loading";
 import { IOrgData } from "../api/models";
 import { getOrgData } from "../api/_request";
-import { FormRow } from "./FormRow";
-import { DateInfoBadge } from "./DateInfoBadge";
 
 export type CreateFormProps = {
   org: string
@@ -54,7 +52,7 @@ const CreateForm = ({org, backLink}: CreateFormProps) => {
               return true
             }
 
-            return !moment(value).isAfter(moment(systemData?.timeLimit))
+            return moment().isBefore(moment(systemData?.timeLimit))
           })
         .test(
           'data-range',
@@ -97,22 +95,14 @@ const CreateForm = ({org, backLink}: CreateFormProps) => {
           <div className="d-flex flex-column">
             <div className="pb-2">
               <OrderTypesSelect orgId={org} types={systemData.orderTypes} data={values.type} onChange={c => setFieldValue("type", c)} />
-              {touched.type && errors.type && (
-                <div className='fv-plugins-message-container'>
-                  <div className='fv-help-block text-danger'>{errors.type}</div>
-                </div>
-              )}
+              <FormValidation errors={errors.type} touched={touched.type}/>
             </div>
             <FormRow 
               label="Имена"
               element={
                 <>
                   <Field className='form-control' name="names" placeholder="Укажите имена" component='textarea' rows='5' />
-                  {touched.names && errors.names && (
-                    <div className='fv-plugins-message-container'>
-                      <div className='fv-help-block text-danger'>{errors.names}</div>
-                    </div>
-                  )}
+                  <FormValidation errors={errors.names} touched={touched.names}/>
                 </>}
             />
             <FormRow 
@@ -125,12 +115,9 @@ const CreateForm = ({org, backLink}: CreateFormProps) => {
                     type="date" 
                     placeholder="ДД.ММ.ГГГГ" 
                     min={moment(systemData.minDate).format(INPUT_DATE_FORMAT)} 
-                    max={orderDates.maxDate().format(INPUT_DATE_FORMAT)} />
-                    {touched.date && errors.date && (
-                      <div className='fv-plugins-message-container'>
-                        <div className='fv-help-block text-danger'>{<>{errors.date}</>}</div>
-                      </div>
-                    )}
+                    max={orderDates.maxDate().format(INPUT_DATE_FORMAT)} 
+                  />
+                  <FormValidation errors={errors.date} touched={touched.date}/>
                 </>}
             />
             <FormRow 
@@ -138,11 +125,7 @@ const CreateForm = ({org, backLink}: CreateFormProps) => {
               element={
                 <>
                   <Field className='form-control' name="email" type="email" placeholder="Электронная почта" />
-                  {touched.email && errors.email && (
-                    <div className='fv-plugins-message-container'>
-                      <div className='fv-help-block text-danger'>{<>{errors.email}</>}</div>
-                    </div>
-                  )}
+                  <FormValidation errors={errors.email} touched={touched.email}/>
                 </>}
             />
             <FormRow 
@@ -150,11 +133,7 @@ const CreateForm = ({org, backLink}: CreateFormProps) => {
               element={
                 <>
                   <Field className='form-control' name="sum" type="number" placeholder="Сумма пожертвования" />
-                  {touched.sum && errors.sum && (
-                    <div className='fv-plugins-message-container'>
-                      <div className='fv-help-block text-danger'>{errors.sum}</div>
-                    </div>
-                  )}
+                  <FormValidation errors={errors.sum} touched={touched.sum}/>
                 </>}
             />
             <div className="d-flex justify-content-between pb-2">
