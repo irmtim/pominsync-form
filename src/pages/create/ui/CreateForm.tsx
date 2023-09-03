@@ -37,7 +37,9 @@ const CreateForm = ({org, backLink}: CreateFormProps) => {
 
   const validationSchema = useMemo(() => Yup.object().shape({
       type: Yup.string().required('Обязательно для заполнения'),
-      email: Yup.string().email('Введите корректный почтовый адрес'),
+      email: Yup.string()
+        .required('Обязательно для заполнения')
+        .email('Введите корректный почтовый адрес'),
       names: Yup.string().required('Обязательно для заполнения'),
       sum: Yup.number()
         .required('Обязательно для заполнения')
