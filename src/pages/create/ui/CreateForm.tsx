@@ -54,7 +54,7 @@ const CreateForm = ({org, backLink}: CreateFormProps) => {
               return true
             }
 
-            return moment().isBefore(moment(systemData?.timeLimit))
+            return moment().isBefore(moment(systemData?.timeLimit, 'YYYY-MM-DDTHH:mm'))
           })
         .test(
           'data-range',
